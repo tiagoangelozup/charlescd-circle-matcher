@@ -1,5 +1,9 @@
 package main
 
-func main() {
+import (
+	"github.com/tetratelabs/proxy-wasm-go-sdk/proxywasm"
+)
 
+func main() {
+	proxywasm.SetVMContext(&rootContext{})
 }

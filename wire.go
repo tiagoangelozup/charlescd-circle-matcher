@@ -9,6 +9,9 @@ import (
 )
 
 func newHttpContext(contextID uint32) types.HttpContext {
-	wire.Build(providers)
+	wire.Build(
+		newHttpHeaders,
+		wire.Bind(new(types.HttpContext), new(*httpHeaders)),
+	)
 	return nil
 }

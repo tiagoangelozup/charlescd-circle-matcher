@@ -5,5 +5,9 @@ help: ## This help.
 .DEFAULT_GOAL := help
 
 .PHONY: build
-build: ## Build a wasm image from a TinyGo filter
+build: ## Build a wasm image from a TinyGo filter.
 	tinygo build -o charlescd.wasm -scheduler=none -target=wasi ./
+
+.PHONY: test
+test: ## Test the wasm image from the end user’s experience.
+	go test -v ./e2e -count=1

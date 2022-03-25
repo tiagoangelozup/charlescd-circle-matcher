@@ -4,7 +4,7 @@ go 1.17
 
 require (
 	github.com/google/wire v0.5.0
-	github.com/stretchr/testify v1.7.0
+	github.com/stretchr/testify v1.7.1
 	github.com/tetratelabs/proxy-wasm-go-sdk v0.17.0
 )
 
