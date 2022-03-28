@@ -10,30 +10,21 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
-    name: Build
+  wasm:
+    name: Build WebAssembly binary
     runs-on: ubuntu-latest
     container:
       image: tinygo/tinygo:0.22.0
     steps:
       - name: Checkout
-        uses: actions/checkout@v3.0.0
+        uses: actions/checkout@a12a3943b4bdde767164f792f33f40b04645d846 # v3.0.0
 
       - name: Set up variables
         id: vars
-        run: |
-          echo "::set-output name=COMMIT_HASH::$(git rev-parse --short HEAD)"
-
-      - name: Install Go
-        uses: actions/setup-go@v3.0.0
-        with:
-          go-version: '~1.17'
-
-      - name: Install Make
-        run: apt install make
+        run: echo "::set-output name=COMMIT_HASH::$(echo ${GITHUB_SHA} | cut -c1-8)"
 
       - name: Build
-        run: make build
+        run: tinygo build -o charlescd.wasm -scheduler=none -target=wasi ./
 
       - name: Upload built artifact
         uses: actions/upload-artifact@v3.0.0
@@ -43,6 +34,7 @@ jobs:
           retention-days: 1
 
   tools:
+    name: Install required tools
     runs-on: ubuntu-latest
     outputs:
       KUBECTL_VERSION: ${{ steps.vars.outputs.KUBECTL_VERSION }}
@@ -108,16 +100,15 @@ jobs:
 #          - "1.10.6"
 #          - "1.9.9"
     name: Kubernetes v${{ matrix.kubernetes }} x Istio v${{ matrix.istio }}
-    needs: [ build, tools ]
+    needs: [ wasm, tools ]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
         uses: actions/checkout@a12a3943b4bdde767164f792f33f40b04645d846 # v3.0.0
 
-      - name: Fetch built artifact
-        uses: actions/download-artifact@v3.0.0
-        with:
-          name: charlescd.wasm-${{ steps.vars.outputs.COMMIT_HASH }}
+      - name: Set up variables
+        id: vars
+        run: echo "::set-output name=COMMIT_HASH::$(echo ${GITHUB_SHA} | cut -c1-8)"
 
       - name: Set up versions
         uses: actions/github-script@9ac08808f993958e9de277fe43a64532a609130e # v6.0.0
@@ -141,6 +132,11 @@ jobs:
         uses: actions/setup-go@v3.0.0
         with:
           go-version: '~1.17'
+
+      - name: Fetch built artifact
+        uses: actions/download-artifact@v3.0.0
+        with:
+          name: charlescd.wasm-${{ steps.vars.outputs.COMMIT_HASH }}
 
       - name: Runs integration tests
         working-directory: e2e
