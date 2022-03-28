@@ -40,6 +40,7 @@ jobs:
       KUBECTL_VERSION: ${{ steps.vars.outputs.KUBECTL_VERSION }}
       KUSTOMIZE_VERSION: ${{ steps.vars.outputs.KUSTOMIZE_VERSION }}
       KUTTL_VERSION: ${{ steps.vars.outputs.KUTTL_VERSION }}
+      YQ_VERSION: ${{ steps.vars.outputs.YQ_VERSION }}
     steps:
       - name: Set up versions
         id: vars
@@ -49,10 +50,12 @@ jobs:
             const kubectl = '1.23.5';
             const kustomize = '4.5.3';
             const kuttl = '0.11.1';
+            const yq = '4.24.2';
             core.setOutput('KUBECTL_VERSION', kubectl)
             core.setOutput('KUSTOMIZE_VERSION', kustomize)
             core.setOutput('KUTTL_VERSION', kuttl)
-            require('fs').writeFileSync('./versions.txt', JSON.stringify({kubectl, kustomize, kuttl}))
+            core.setOutput('YQ_VERSION', yq)
+            require('fs').writeFileSync('./versions.txt', JSON.stringify({kubectl, kustomize, kuttl, yq}))
 
       - name: Cache binaries
         id: bin-cache
@@ -83,23 +86,30 @@ jobs:
           curl -sLo ./bin/kuttl https://github.com/kudobuilder/kuttl/releases/download/v${{ steps.vars.outputs.KUTTL_VERSION }}/kubectl-kuttl_${{ steps.vars.outputs.KUTTL_VERSION }}_linux_x86_64
           chmod +x ./bin/kuttl
 
+      - name: Install yq
+        if: steps.bin-cache.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p ./bin
+          curl -sLo ./bin/yq https://github.com/mikefarah/yq/releases/download/v${{ steps.vars.outputs.YQ_VERSION }}/yq_linux_amd64
+          chmod +x ./bin/yq
+
   test:
     strategy:
       matrix:
         kubernetes:
           - "1.23.5"
-#          - "1.22.7"
-#          - "1.21.10"
-#          - "1.20.15"
-#          - "1.19.16"
-#          - "1.18.20"
+          - "1.22.7"
+          - "1.21.10"
+          - "1.20.15"
+          - "1.19.16"
+          - "1.18.20"
         istio:
           - "1.13.2"
-#          - "1.12.5"
-#          - "1.11.8"
-#          - "1.10.6"
-#          - "1.9.9"
-    name: Kubernetes v${{ matrix.kubernetes }} x Istio v${{ matrix.istio }}
+          - "1.12.5"
+          - "1.11.8"
+          - "1.10.6"
+          - "1.9.9"
+    name: Test cluster ${{ matrix.kubernetes }} with Istio ${{ matrix.istio }}
     needs: [ wasm, tools ]
     runs-on: ubuntu-latest
     steps:
@@ -117,7 +127,8 @@ jobs:
             const kubectl = '${{ needs.tools.outputs.KUBECTL_VERSION }}';
             const kustomize = '${{ needs.tools.outputs.KUSTOMIZE_VERSION }}';
             const kuttl = '${{ needs.tools.outputs.KUTTL_VERSION }}';
-            require('fs').writeFileSync('./versions.txt', JSON.stringify({kubectl, kustomize, kuttl}))
+            const yq = '${{ needs.tools.outputs.YQ_VERSION }}';
+            require('fs').writeFileSync('./versions.txt', JSON.stringify({kubectl, kustomize, kuttl, yq}))
 
       - name: Cache binaries
         uses: actions/cache@4b0cf6cc4619e737324ddfcec08fff2413359514 # v3.0.0
@@ -137,6 +148,17 @@ jobs:
         uses: actions/download-artifact@v3.0.0
         with:
           name: charlescd.wasm-${{ steps.vars.outputs.COMMIT_HASH }}
+
+      - name: Install istioctl
+        run: |
+          curl -L https://istio.io/downloadIstio | ISTIO_VERSION=${{ matrix.istio }} sh -
+          echo "$(pwd)/istio-${{ matrix.istio }}/bin" >> $GITHUB_PATH
+
+      - name: Setup Istio
+        run: yq -i '.spec.tag = "${{ matrix.istio }}-distroless"' e2e/istio.yaml
+
+      - name: Setup Kubernetes
+        run: yq -i '.nodes[0].image = "kindest/node:v${{ matrix.kubernetes }}"' e2e/kind.yaml
 
       - name: Runs integration tests
         working-directory: e2e
