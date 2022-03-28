@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: webpage
+spec:
+  selector:
+    app: webpage
+  ports:
+    - port: 80
+  type: NodePort

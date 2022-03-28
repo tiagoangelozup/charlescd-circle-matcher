@@ -1,0 +1,55 @@
+---
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: webpage
+spec:
+  host: webpage
+  subsets:
+    - name: blue
+      labels:
+        app: webpage
+        version: blue
+    - name: red
+      labels:
+        app: webpage
+        version: red
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: webpage
+spec:
+  gateways:
+    - webpage
+  hosts:
+    - webpage.lvh.me
+    - webpage
+  http:
+    - match:
+        - headers:
+            end-user:
+              exact: 18e2451b-c1c3-4d4f-a37b-232db6e95cf9
+      route:
+        - destination:
+            host: webpage
+            subset: blue
+    - route:
+        - destination:
+            host: webpage
+            subset: red
+---
+apiVersion: networking.istio.io/v1beta1
+kind: Gateway
+metadata:
+  name: webpage
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+    - hosts:
+        - webpage.lvh.me
+      port:
+        name: http
+        number: 80
+        protocol: HTTP

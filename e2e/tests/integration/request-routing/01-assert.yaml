@@ -1,0 +1,4 @@
+apiVersion: kuttl.dev/v1beta1
+kind: TestAssert
+commands:
+  - command: go test -count=1 -v tests/integration/request_routing_test.go

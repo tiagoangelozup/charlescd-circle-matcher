@@ -1,0 +1,17 @@
+apiVersion: kuttl.dev/v1beta1
+kind: TestSuite
+kindConfig: ./kind.yaml
+kindContext: request-routing
+kindNodeCache: true
+skipClusterDelete: false
+skipDelete: true
+startKIND: true
+reportFormat: JSON
+commands:
+  - command: istioctl install -f=istio.yaml -y
+  - command: kubectl -n=istio-system wait --timeout=60s --for=condition=Available deployment.apps/istiod
+testDirs:
+  - ./tests/integration/
+kindContainers:
+  - webpage:red
+  - webpage:blue

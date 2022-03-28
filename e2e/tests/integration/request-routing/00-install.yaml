@@ -1,0 +1,20 @@
+apiVersion: kuttl.dev/v1beta1
+kind: TestStep
+commands:
+  - command: kubectl label namespace $NAMESPACE istio-injection=enabled
+  - skipLogOutput: true
+    script: |
+      set -e
+      TMP_DIR=$(mktemp -d)
+      cp -a deploy/* $TMP_DIR
+      cat <<EOF >$TMP_DIR/gateway_patch.json
+      [{"op":"replace","path":"/spec/servers/0/hosts/0","value":"$NAMESPACE.lvh.me"}]
+      EOF
+      cat <<EOF >$TMP_DIR/virtualservice_patch.json
+      [{"op":"replace","path":"/spec/hosts/0","value":"$NAMESPACE.lvh.me"}]
+      EOF
+      (cd $TMP_DIR ; kustomize edit set namespace $NAMESPACE)
+      (cd $TMP_DIR ; kustomize edit add patch --path=gateway_patch.json --kind=Gateway --name=webpage)
+      (cd $TMP_DIR ; kustomize edit add patch --path=virtualservice_patch.json --kind=VirtualService --name=webpage)
+      kustomize build $TMP_DIR | kubectl apply -f -
+      rm -rf $TMP_DIR

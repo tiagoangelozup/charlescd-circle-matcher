@@ -1,0 +1,54 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: webpage-blue
+  labels:
+    app: webpage
+spec:
+  replicas: 1
+  template:
+    metadata:
+      name: webpage
+      labels:
+        app: webpage
+        version: blue
+    spec:
+      containers:
+        - name: webpage
+          image: webpage:blue
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 80
+      restartPolicy: Always
+  selector:
+    matchLabels:
+      app: webpage
+      version: blue
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: webpage-red
+  labels:
+    app: webpage
+spec:
+  replicas: 1
+  template:
+    metadata:
+      name: webpage
+      labels:
+        app: webpage
+        version: red
+    spec:
+      containers:
+        - name: webpage
+          image: webpage:red
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 80
+      restartPolicy: Always
+  selector:
+    matchLabels:
+      app: webpage
+      version: red

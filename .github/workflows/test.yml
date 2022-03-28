@@ -42,48 +42,119 @@ jobs:
           path: charlescd.wasm
           retention-days: 1
 
+  tools:
+    runs-on: ubuntu-latest
+    outputs:
+      KUBECTL_VERSION: ${{ steps.vars.outputs.KUBECTL_VERSION }}
+      KUSTOMIZE_VERSION: ${{ steps.vars.outputs.KUSTOMIZE_VERSION }}
+      KUTTL_VERSION: ${{ steps.vars.outputs.KUTTL_VERSION }}
+    steps:
+      - name: Set up versions
+        id: vars
+        uses: actions/github-script@9ac08808f993958e9de277fe43a64532a609130e # v6.0.0
+        with:
+          script: |
+            const kubectl = '1.23.5';
+            const kustomize = '4.5.3';
+            const kuttl = '0.11.1';
+            core.setOutput('KUBECTL_VERSION', kubectl)
+            core.setOutput('KUSTOMIZE_VERSION', kustomize)
+            core.setOutput('KUTTL_VERSION', kuttl)
+            require('fs').writeFileSync('./versions.txt', JSON.stringify({kubectl, kustomize, kuttl}))
+
+      - name: Cache binaries
+        id: bin-cache
+        uses: actions/cache@4b0cf6cc4619e737324ddfcec08fff2413359514 # v3.0.0
+        with:
+          path: ./bin
+          key: ${{ runner.os }}-bin-${{ hashFiles('**/versions.txt') }}
+
+      - name: Install kubectl
+        if: steps.bin-cache.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p ./bin
+          curl -sLo ./bin/kubectl https://dl.k8s.io/release/v${{ steps.vars.outputs.KUBECTL_VERSION }}/bin/linux/amd64/kubectl
+          chmod +x ./bin/kubectl
+
+      - name: Install Kustomize
+        if: steps.bin-cache.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p ./bin
+          curl -sLO https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize/v${{ steps.vars.outputs.KUSTOMIZE_VERSION }}/kustomize_v${{ steps.vars.outputs.KUSTOMIZE_VERSION }}_linux_amd64.tar.gz
+          tar zxvf kustomize_v${{ steps.vars.outputs.KUSTOMIZE_VERSION }}_linux_amd64.tar.gz -C ./bin
+          chmod +x ./bin/kustomize
+
+      - name: Install KUTTL
+        if: steps.bin-cache.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p ./bin
+          curl -sLo ./bin/kuttl https://github.com/kudobuilder/kuttl/releases/download/v${{ steps.vars.outputs.KUTTL_VERSION }}/kubectl-kuttl_${{ steps.vars.outputs.KUTTL_VERSION }}_linux_x86_64
+          chmod +x ./bin/kuttl
+
   test:
     strategy:
       matrix:
-        image: [
-          "istio/proxyv2:1.9.9",
-          "istio/proxyv2:1.10.6",
-          "istio/proxyv2:1.11.8",
-          "istio/proxyv2:1.12.5",
-          "istio/proxyv2:1.13.2",
-        ]
-    name: Test (${{ matrix.image }})
-    needs: [ build ]
+        kubernetes:
+          - "1.23.5"
+#          - "1.22.7"
+#          - "1.21.10"
+#          - "1.20.15"
+#          - "1.19.16"
+#          - "1.18.20"
+        istio:
+          - "1.13.2"
+#          - "1.12.5"
+#          - "1.11.8"
+#          - "1.10.6"
+#          - "1.9.9"
+    name: Kubernetes v${{ matrix.kubernetes }} x Istio v${{ matrix.istio }}
+    needs: [ build, tools ]
     runs-on: ubuntu-latest
-    container:
-      image: ${{ matrix.image }}
-      options: --privileged
     steps:
-      - name: Install Go
-        uses: actions/setup-go@v3.0.0
-        with:
-          go-version: '~1.17'
-
-      - name: Print Envoy version
-        run: envoy --version
-
-      - name: Install Make
-        run: apt update && apt install make
-
-      - name: Checkout
-        uses: actions/checkout@v3.0.0
-
-      - name: Set up variables
-        id: vars
-        run: |
-          echo "::set-output name=COMMIT_HASH::$(git rev-parse --short HEAD)"
+      - name: Checkout repo
+        uses: actions/checkout@a12a3943b4bdde767164f792f33f40b04645d846 # v3.0.0
 
       - name: Fetch built artifact
         uses: actions/download-artifact@v3.0.0
         with:
           name: charlescd.wasm-${{ steps.vars.outputs.COMMIT_HASH }}
 
-      - name: Run e2e test
-        run: make test
-        env:
-          CGO_ENABLED: "0"
+      - name: Set up versions
+        uses: actions/github-script@9ac08808f993958e9de277fe43a64532a609130e # v6.0.0
+        with:
+          script: |
+            const kubectl = '${{ needs.tools.outputs.KUBECTL_VERSION }}';
+            const kustomize = '${{ needs.tools.outputs.KUSTOMIZE_VERSION }}';
+            const kuttl = '${{ needs.tools.outputs.KUTTL_VERSION }}';
+            require('fs').writeFileSync('./versions.txt', JSON.stringify({kubectl, kustomize, kuttl}))
+
+      - name: Cache binaries
+        uses: actions/cache@4b0cf6cc4619e737324ddfcec08fff2413359514 # v3.0.0
+        with:
+          path: ./bin
+          key: ${{ runner.os }}-bin-${{ hashFiles('**/versions.txt') }}
+
+      - name: Add binaries
+        run: echo "$(pwd)/bin" >> $GITHUB_PATH
+
+      - name: Install Go
+        uses: actions/setup-go@v3.0.0
+        with:
+          go-version: '~1.17'
+
+      - name: Runs integration tests
+        working-directory: e2e
+        run: |
+          docker build --build-arg html=webpage/red.html -f webpage/Dockerfile -t webpage:red .
+          docker build --build-arg html=webpage/blue.html -f webpage/Dockerfile -t webpage:blue .
+          kuttl test
+
+      - name: Upload integration test results
+        if: always()
+        uses: actions/upload-artifact@6673cd052c4cd6fcf4b4e6e60ea986c889389535 # v3.0.0
+        with:
+          name: kuttl-test-${{ steps.vars.outputs.COMMIT_HASH }}-kube${{ matrix.kubernetes }}-istio${{ matrix.istio }}
+          path: |
+            e2e/kind-logs-*
+            e2e/kuttl-test.json
+          retention-days: 1

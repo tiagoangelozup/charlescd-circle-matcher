@@ -10,4 +10,7 @@ build: ## Build a wasm image from a TinyGo filter.
 
 .PHONY: test
 test: ## Test the wasm image from the end user’s experience.
-	go test -v ./e2e -count=1
+	cd e2e; \
+	docker build --build-arg html=webpage/red.html -f webpage/Dockerfile -t webpage:red .; \
+	docker build --build-arg html=webpage/blue.html -f webpage/Dockerfile -t webpage:blue .; \
+	kubectl kuttl test
