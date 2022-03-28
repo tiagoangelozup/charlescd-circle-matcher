@@ -108,7 +108,6 @@ jobs:
           - "1.12.5"
           - "1.11.8"
           - "1.10.6"
-          - "1.9.9"
     name: Test cluster ${{ matrix.kubernetes }} with Istio ${{ matrix.istio }}
     needs: [ wasm, tools ]
     runs-on: ubuntu-latest
