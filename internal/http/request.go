@@ -28,3 +28,11 @@ func (r *Request) GetHeader(key string) (string, error) {
 	}
 	return "", nil
 }
+
+func (r *Request) AddHeader(key, value string) error {
+	err := proxywasm.AddHttpRequestHeader(key, value)
+	if err != nil {
+		return fmt.Errorf("error adding value %q to http request header %q: %w", value, key, err)
+	}
+	return nil
+}
