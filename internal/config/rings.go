@@ -3,20 +3,25 @@ package config
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/tetratelabs/proxy-wasm-go-sdk/proxywasm"
 )
 
 type Rings []*Ring
 
-func UnmarshalRings(data []byte) (Rings, error) {
-	var r Rings
-	if err := json.Unmarshal(data, &r); err != nil {
-		return nil, fmt.Errorf("error inmarshalling configurations: %w", err)
+func RingsFromPlugin() (Rings, error) {
+	data, err := proxywasm.GetPluginConfiguration()
+	if err != nil {
+		return nil, fmt.Errorf("error reading rings from plugin configuration: %w", err)
 	}
-	return r, nil
+	return unmarshalRings(data)
 }
 
-func (r *Rings) Marshal() ([]byte, error) {
-	return json.Marshal(r)
+func unmarshalRings(data []byte) (Rings, error) {
+	var r Rings
+	if err := json.Unmarshal(data, &r); err != nil {
+		return nil, fmt.Errorf("error unmarshalling configurations: %w", err)
+	}
+	return r, nil
 }
 
 type Ring struct {
