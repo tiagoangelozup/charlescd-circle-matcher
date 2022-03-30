@@ -5,5 +5,5 @@ import (
 )
 
 func main() {
-	proxywasm.SetVMContext(&rootContext{})
+	proxywasm.SetVMContext(&vm{})
 }
