@@ -19,19 +19,19 @@ type plugin struct {
 	sync.RWMutex
 	types.DefaultPluginContext
 	log   logger.Interface
-	rings config.Rings
+	rings []*config.Ring
 }
 
-func (p *plugin) Rings() config.Rings {
+func (p *plugin) Rings() []*config.Ring {
 	p.RLock()
 	defer p.RUnlock()
 	if p.rings == nil {
-		return make(config.Rings, 0)
+		return make([]*config.Ring, 0)
 	}
 	return p.rings
 }
 
-func (p *plugin) AddRings(rings config.Rings) {
+func (p *plugin) AddRings(rings []*config.Ring) {
 	p.Lock()
 	defer p.Unlock()
 	p.rings = append(p.rings, rings...)

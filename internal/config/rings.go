@@ -4,24 +4,33 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/tetratelabs/proxy-wasm-go-sdk/proxywasm"
+	"github.com/tetratelabs/proxy-wasm-go-sdk/proxywasm/types"
 )
 
-type Rings []*Ring
-
-func RingsFromPlugin() (Rings, error) {
+func RingsFromPlugin() ([]*Ring, error) {
 	data, err := proxywasm.GetPluginConfiguration()
-	if err != nil {
-		return nil, fmt.Errorf("error reading rings from plugin configuration: %w", err)
+	if err != nil && err != types.ErrorStatusNotFound {
+		return nil, fmt.Errorf("error getting plugin configurations: %w", err)
 	}
-	return unmarshalRings(data)
+	if data == nil {
+		return nil, nil
+	}
+	plugin, err := unmarshalPlugin(data)
+	if err != nil {
+		return nil, fmt.Errorf("error unmarshaling plugin configurations: %w", err)
+	}
+	return plugin.Rings, err
 }
-
-func unmarshalRings(data []byte) (Rings, error) {
-	var r Rings
-	if err := json.Unmarshal(data, &r); err != nil {
-		return nil, fmt.Errorf("error unmarshalling configurations: %w", err)
+func unmarshalPlugin(data []byte) (*Plugin, error) {
+	r := new(Plugin)
+	if err := json.Unmarshal(data, r); err != nil {
+		return nil, fmt.Errorf("error unmarshaling plugin configurations: %w", err)
 	}
 	return r, nil
+}
+
+type Plugin struct {
+	Rings []*Ring `json:"rings,omitempty"`
 }
 
 type Ring struct {

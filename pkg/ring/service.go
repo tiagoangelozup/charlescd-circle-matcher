@@ -9,10 +9,10 @@ import (
 
 type Service struct {
 	log   logger.Interface
-	rings config.Rings
+	rings []*config.Ring
 }
 
-func NewService(rings config.Rings, loggerFactory *logger.Factory) *Service {
+func NewService(rings []*config.Ring, loggerFactory *logger.Factory) *Service {
 	log := loggerFactory.GetLogger("ring.Service")
 	return &Service{rings: rings, log: log}
 }
@@ -26,6 +26,11 @@ func (s *Service) FindRings(req *http.Request) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
+	email, err := j.GetString("email")
+	if err != nil {
+		return nil, err
+	}
+	s.log.Debugf("found email = %s", email)
 	results := make([]string, 0)
 	for _, ring := range s.rings {
 		for _, rule := range ring.Match.Any {

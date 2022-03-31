@@ -24,7 +24,7 @@ func newPluginContext(contextID uint32) types.PluginContext {
 	return mainPlugin
 }
 
-func newHttpContext(contextID uint32, rings config.Rings) types.HttpContext {
+func newHttpContext(contextID uint32, rings []*config.Ring) types.HttpContext {
 	factory := logger.NewFactory(contextID)
 	service := ring.NewService(rings, factory)
 	jwt := router.NewJWT(service, factory)
