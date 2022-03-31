@@ -4,6 +4,7 @@
 package integration
 
 import (
+	"encoding/base64"
 	"fmt"
 	"io"
 	"log"
@@ -23,7 +24,43 @@ func Test_request_routing_1(t *testing.T) {
 	log.Printf("trying to get 'RED' page on %q\n", url)
 	req, err := http.NewRequest("GET", url, nil)
 	require.NoError(t, err)
-	require.Eventually(t, func() bool {
+
+	require.Eventually(t, getRed(req), 5*time.Second, time.Millisecond)
+	require.Never(t, getBlue(req), 5*time.Second, time.Millisecond)
+}
+
+func Test_request_routing_2(t *testing.T) {
+	ns := os.Getenv("NAMESPACE")
+	require.NotEmpty(t, ns)
+
+	url := fmt.Sprintf("http://%s.lvh.me/", ns)
+	log.Printf("trying to get 'BLUE' page on %q\n", url)
+	req, err := http.NewRequest("GET", url, nil)
+	require.NoError(t, err)
+
+	user := base64.RawStdEncoding.EncodeToString([]byte(`{"name":"Rafaela Rocha Cavalcanti","age":33,"city":"Fortaleza-CE"}`))
+	req.Header.Add("X-CharlesCD-Ring", user)
+	require.Eventually(t, getBlue(req), 5*time.Second, time.Millisecond)
+	require.Never(t, getRed(req), 5*time.Second, time.Millisecond)
+}
+
+func Test_request_routing_3(t *testing.T) {
+	ns := os.Getenv("NAMESPACE")
+	require.NotEmpty(t, ns)
+
+	url := fmt.Sprintf("http://%s.lvh.me/", ns)
+	log.Printf("trying to get 'RED' page on %q\n", url)
+	req, err := http.NewRequest("GET", url, nil)
+	require.NoError(t, err)
+
+	user := base64.RawStdEncoding.EncodeToString([]byte(`{"name":"Antônio Rodrigues Santos","age":18,"city":"Lençóis Paulista-SP"}`))
+	req.Header.Add("X-CharlesCD-Ring", user)
+	require.Eventually(t, getRed(req), 5*time.Second, time.Millisecond)
+	require.Never(t, getBlue(req), 5*time.Second, time.Millisecond)
+}
+
+func getRed(req *http.Request) func() bool {
+	return func() bool {
 		res, err := http.DefaultClient.Do(req)
 		if err != nil {
 			return false
@@ -37,19 +74,11 @@ func Test_request_routing_1(t *testing.T) {
 			return false
 		}
 		return strings.Contains(string(body), "background-color:red;")
-	}, 5*time.Second, time.Millisecond)
+	}
 }
 
-func Test_request_routing_2(t *testing.T) {
-	ns := os.Getenv("NAMESPACE")
-	require.NotEmpty(t, ns)
-
-	url := fmt.Sprintf("http://%s.lvh.me/", ns)
-	log.Printf("trying to get 'BLUE' page on %q\n", url)
-	req, err := http.NewRequest("GET", url, nil)
-	require.NoError(t, err)
-	req.Header.Add("end-user", "18e2451b-c1c3-4d4f-a37b-232db6e95cf9")
-	require.Eventually(t, func() bool {
+func getBlue(req *http.Request) func() bool {
+	return func() bool {
 		res, err := http.DefaultClient.Do(req)
 		if err != nil {
 			return false
@@ -63,5 +92,5 @@ func Test_request_routing_2(t *testing.T) {
 			return false
 		}
 		return strings.Contains(string(body), "background-color:blue;")
-	}, 5*time.Second, time.Millisecond)
+	}
 }

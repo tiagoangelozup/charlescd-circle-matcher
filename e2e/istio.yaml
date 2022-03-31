@@ -24,3 +24,15 @@ spec:
                 targetPort: 8443
   profile: minimal
   tag: 1.13.2-distroless
+  values:
+    gateways:
+      istio-ingressgateway:
+        type: NodePort
+    global:
+      defaultPodDisruptionBudget:
+        enabled: false
+      logging:
+        level: default:debug
+      proxy:
+        componentLogLevel: misc:debug
+        logLevel: debug

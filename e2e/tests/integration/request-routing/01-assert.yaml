@@ -1,4 +1,5 @@
 apiVersion: kuttl.dev/v1beta1
 kind: TestAssert
+timeout: 5
 commands:
-  - command: go test -tags=e2e -count=1 -v tests/integration/request_routing_test.go
+  - command: go test -tags=integration -count=1 -v tests/integration/request_routing_test.go
