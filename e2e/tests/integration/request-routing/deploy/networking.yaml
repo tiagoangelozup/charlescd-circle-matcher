@@ -28,7 +28,7 @@ spec:
   http:
     - match:
         - headers:
-            end-user:
+            X-CharlesCD-Ring:
               exact: 18e2451b-c1c3-4d4f-a37b-232db6e95cf9
       route:
         - destination:
@@ -53,3 +53,56 @@ spec:
         name: http
         number: 80
         protocol: HTTP
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: EnvoyFilter
+metadata:
+  name: charlescd-wasm
+spec:
+  configPatches:
+    - applyTo: HTTP_FILTER
+      match:
+        context: SIDECAR_INBOUND
+        listener:
+          filterChain:
+            filter:
+              name: envoy.filters.network.http_connection_manager
+              subFilter:
+                name: envoy.filters.http.router
+      patch:
+        operation: INSERT_BEFORE
+        value:
+          name: charlescd-wasm
+          typed_config:
+            '@type': type.googleapis.com/udpa.type.v1.TypedStruct
+            type_url: type.googleapis.com/envoy.extensions.filters.http.wasm.v3.Wasm
+            value:
+              config:
+                configuration:
+                  '@type': type.googleapis.com/google.protobuf.StringValue
+                  value: { }
+                vm_config:
+                  vm_id: charlescd-wasm
+                  runtime: envoy.wasm.runtime.v8
+                  configuration:
+                    '@type': type.googleapis.com/google.protobuf.StringValue
+                    value: |
+                      {
+                        "rings": [
+                          {
+                            "id": "9d22edc0-db79-412e-9e4d-d420ec5826d0",
+                            "match": {
+                              "any": [
+                                {
+                                  "key": "request.auth.claims.age",
+                                  "operator": "GreaterThan",
+                                  "values": [ 30, 31 ]
+                                }
+                              ]
+                            }
+                          }
+                        ]
+                      }
+                  code:
+                    local:
+                      filename: /var/local/wasm/charlescd.wasm

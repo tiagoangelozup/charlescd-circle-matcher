@@ -98,16 +98,16 @@ jobs:
       matrix:
         kubernetes:
           - "1.23.5"
-          - "1.22.7"
-          - "1.21.10"
-          - "1.20.15"
-          - "1.19.16"
-          - "1.18.20"
+#          - "1.22.7"
+#          - "1.21.10"
+#          - "1.20.15"
+#          - "1.19.16"
+#          - "1.18.20"
         istio:
           - "1.13.2"
-          - "1.12.5"
-          - "1.11.8"
-          - "1.10.6"
+#          - "1.12.5"
+#          - "1.11.8"
+#          - "1.10.6"
     name: Test cluster ${{ matrix.kubernetes }} with Istio ${{ matrix.istio }}
     needs: [ wasm, tools ]
     runs-on: ubuntu-latest
@@ -147,6 +147,7 @@ jobs:
         uses: actions/download-artifact@v3.0.0
         with:
           name: charlescd.wasm-${{ steps.vars.outputs.COMMIT_HASH }}
+          path: e2e/tests/integration/request-routing/deploy
 
       - name: Install istioctl
         run: |

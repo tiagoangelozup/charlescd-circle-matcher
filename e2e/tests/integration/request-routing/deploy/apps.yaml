@@ -10,6 +10,9 @@ spec:
   template:
     metadata:
       name: webpage
+      annotations:
+        sidecar.istio.io/userVolume: '[{"configMap":{"name":"charlescd-wasm"},"name":"wasm"}]'
+        sidecar.istio.io/userVolumeMount: '[{"mountPath":"/var/local/wasm","name":"wasm"}]'
       labels:
         app: webpage
         version: blue
@@ -37,6 +40,9 @@ spec:
   template:
     metadata:
       name: webpage
+      annotations:
+        sidecar.istio.io/userVolume: '[{"configMap":{"name":"charlescd-wasm"},"name":"wasm"}]'
+        sidecar.istio.io/userVolumeMount: '[{"mountPath":"/var/local/wasm","name":"wasm"}]'
       labels:
         app: webpage
         version: red

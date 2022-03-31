@@ -1,6 +1,12 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-- apps.yaml
-- networking.yaml
-- service.yaml
+  - apps.yaml
+  - networking.yaml
+  - service.yaml
+configMapGenerator:
+  - name: charlescd-wasm
+    files:
+      - charlescd.wasm=./charlescd.wasm
+generatorOptions:
+  disableNameSuffixHash: true
