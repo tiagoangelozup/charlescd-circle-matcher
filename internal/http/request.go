@@ -7,16 +7,20 @@ import (
 	"strings"
 )
 
-type Request struct {
+type Request interface {
+	GetHeader(key string) (string, error)
+}
+
+type envoyRequest struct {
 	numHeaders  int
 	endOfStream bool
 }
 
-func NewRequest(numHeaders int, endOfStream bool) *Request {
-	return &Request{numHeaders: numHeaders, endOfStream: endOfStream}
+func NewRequest(numHeaders int, endOfStream bool) *envoyRequest {
+	return &envoyRequest{numHeaders: numHeaders, endOfStream: endOfStream}
 }
 
-func (r *Request) GetHeader(key string) (string, error) {
+func (r *envoyRequest) GetHeader(key string) (string, error) {
 	hs, err := proxywasm.GetHttpRequestHeaders()
 	if err != nil && err != types.ErrorStatusNotFound {
 		return "", fmt.Errorf("error getting http request header %q: %w", key, err)
@@ -29,7 +33,7 @@ func (r *Request) GetHeader(key string) (string, error) {
 	return "", nil
 }
 
-func (r *Request) AddHeader(key, value string) error {
+func (r *envoyRequest) AddHeader(key, value string) error {
 	err := proxywasm.AddHttpRequestHeader(key, value)
 	if err != nil {
 		return fmt.Errorf("error adding value %q to http request header %q: %w", value, key, err)

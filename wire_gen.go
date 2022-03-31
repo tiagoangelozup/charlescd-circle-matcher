@@ -20,17 +20,29 @@ import (
 
 func newPluginContext(contextID uint32) types.PluginContext {
 	factory := logger.NewFactory(contextID)
-	mainPlugin := newPlugin(factory)
+	mainPluginLogger := pluginLogger(factory)
+	mainPlugin := newPlugin(mainPluginLogger)
 	return mainPlugin
 }
 
 func newHttpContext(contextID uint32, rings []*config.Ring) types.HttpContext {
 	factory := logger.NewFactory(contextID)
-	service := ring.NewService(rings, factory)
+	serviceLogger := ringServiceLogger(factory)
+	service := ring.NewService(serviceLogger, rings)
 	jwt := router.NewJWT(service, factory)
 	return jwt
 }
 
 // wire.go:
 
-var providers = wire.NewSet(ring.NewService, http.NewRequest, http.NewResponse, logger.NewFactory, newPlugin, router.NewJWT, wire.Bind(new(router.RingService), new(*ring.Service)), wire.Bind(new(types.HttpContext), new(*router.JWT)), wire.Bind(new(types.PluginContext), new(*plugin)))
+var providers = wire.NewSet(http.NewRequest, http.NewResponse, logger.NewFactory, newPlugin,
+	pluginLogger, ring.NewService, ringServiceLogger, router.NewJWT, wire.Bind(new(router.RingService), new(*ring.Service)), wire.Bind(new(types.HttpContext), new(*router.JWT)), wire.Bind(new(types.PluginContext), new(*plugin)),
+)
+
+func ringServiceLogger(loggerFactory *logger.Factory) ring.ServiceLogger {
+	return loggerFactory.GetLogger("charlescd.service")
+}
+
+func pluginLogger(loggerFactory *logger.Factory) PluginLogger {
+	return loggerFactory.GetLogger("charlescd.plugin")
+}

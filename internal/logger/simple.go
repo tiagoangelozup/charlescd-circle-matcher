@@ -2,53 +2,53 @@ package logger
 
 import (
 	"fmt"
-	"github.com/tetratelabs/proxy-wasm-go-sdk/proxywasm"
+	"log"
 )
 
-type simple struct{}
+type Local struct{}
 
-func (s *simple) Debugf(format string, args ...interface{}) {
-	proxywasm.LogDebugf(format, args...)
+func (l *Local) Debugf(format string, args ...interface{}) {
+	log.Printf(format, args...)
 }
 
-func (s *simple) Infof(format string, args ...interface{}) {
-	proxywasm.LogInfof(format, args...)
+func (l *Local) Infof(format string, args ...interface{}) {
+	log.Printf(format, args...)
 }
 
-func (s *simple) Warnf(format string, args ...interface{}) {
-	proxywasm.LogWarnf(format, args...)
+func (l *Local) Warnf(format string, args ...interface{}) {
+	log.Printf(format, args...)
 }
 
-func (s *simple) Errorf(err error, format string, args ...interface{}) {
+func (l *Local) Errorf(err error, format string, args ...interface{}) {
 	msg := fmt.Sprintf(format, args...)
 	msg = fmt.Sprintf("%s: %v", msg, err)
-	proxywasm.LogError(msg)
+	log.Printf(msg)
 }
 
-func (s *simple) Criticalf(err error, format string, args ...interface{}) {
+func (l *Local) Criticalf(err error, format string, args ...interface{}) {
 	msg := fmt.Sprintf(format, args...)
 	msg = fmt.Sprintf("%s: %v", msg, err)
-	proxywasm.LogCritical(msg)
+	log.Printf(msg)
 }
 
-func (s *simple) Debug(msg string) {
-	proxywasm.LogDebug(msg)
+func (l *Local) Debug(msg string) {
+	log.Print(msg)
 }
 
-func (s *simple) Info(msg string) {
-	proxywasm.LogInfo(msg)
+func (l *Local) Info(msg string) {
+	log.Print(msg)
 }
 
-func (s *simple) Warn(msg string) {
-	proxywasm.LogWarn(msg)
+func (l *Local) Warn(msg string) {
+	log.Print(msg)
 }
 
-func (s *simple) Error(err error, msg string) {
+func (l *Local) Error(err error, msg string) {
 	msg = fmt.Sprintf("%s: %v", msg, err)
-	proxywasm.LogError(msg)
+	log.Printf(msg)
 }
 
-func (s *simple) Critical(err error, msg string) {
+func (l *Local) Critical(err error, msg string) {
 	msg = fmt.Sprintf("%s: %v", msg, err)
-	proxywasm.LogCritical(msg)
+	log.Printf(msg)
 }

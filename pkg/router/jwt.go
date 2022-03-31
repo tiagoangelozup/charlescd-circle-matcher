@@ -7,7 +7,7 @@ import (
 )
 
 type RingService interface {
-	FindRings(req *http.Request) ([]string, error)
+	FindRings(req http.Request) ([]string, error)
 }
 
 type JWT struct {
@@ -25,10 +25,16 @@ func (h *JWT) OnHttpRequestHeaders(numHeaders int, endOfStream bool) types.Actio
 	req := http.NewRequest(numHeaders, endOfStream)
 	rings, err := h.svc.FindRings(req)
 	if err != nil {
-		h.log.Criticalf(err, "error routing based on JWT claim")
+		h.log.Criticalf(err, "error finding rings based on JWT claim")
 		return types.ActionContinue
 	}
-	_ = rings // TODO:
+	for _, ring := range rings {
+		err = req.AddHeader("X-CharlesCD-Ring", ring)
+		if err != nil {
+			h.log.Criticalf(err, "error adding ring %q to request header", ring)
+			return types.ActionContinue
+		}
+	}
 	return types.ActionContinue
 }
 

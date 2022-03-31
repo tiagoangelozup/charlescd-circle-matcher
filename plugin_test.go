@@ -1,3 +1,6 @@
+//go:build proxytest
+// +build proxytest
+
 package main
 
 import (
@@ -9,10 +12,8 @@ import (
 )
 
 func Test_httpHeaders_OnHttpRequestHeaders(t *testing.T) {
-	//data := base64.RawStdEncoding.EncodeToString([]byte(`{"exp":1648565060,"iat":1648564760,"jti":"8a10d8c8-55a1-4d00-9a96-915aa4120288","iss":"http://keycloak.lvh.me/auth/realms/Kurtis","aud":"account","sub":"7e37ee4c-e8ef-415f-8aa5-54ecf727bdaa","typ":"Bearer","azp":"demo-frontend","session_state":"d170c91e-b4d9-496c-b1de-922fcb615b3b","acr":"1","allowed-origins":["http://0.0.0.0:8000","http://127.0.0.1:8000","http://localhost:8000"],"realm_access":{"roles":["offline_access","uma_authorization","default-roles-kurtis"]},"resource_access":{"account":{"roles":["manage-account","manage-account-links","view-profile"]}},"scope":"profile email","sid":"d170c91e-b4d9-496c-b1de-922fcb615b3b","email_verified":true,"name":"Tiago Angelo","preferred_username":"tiago","age":32,"given_name":"Tiago","family_name":"Angelo","email":"tiago@gmail.com"}`))
-	//_ = data
 	// Setup configurations.
-	config := `{"rings":[{"id":"9d22edc0-db79-412e-9e4d-d420ec5826d0","match":{"any":[{"key":"request.auth.claims","operator":"GreaterThan","value":30}]}}]}`
+	config := `{"rings":[{"id":"9d22edc0-db79-412e-9e4d-d420ec5826d0","match":{"any":[{"key":"request.auth.claims.age","operator":"GreaterThan","values":[30,31]}]}}]}`
 	opt := proxytest.NewEmulatorOption().
 		WithPluginConfiguration([]byte(config)).
 		WithVMContext(&vm{})

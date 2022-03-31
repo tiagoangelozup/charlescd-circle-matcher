@@ -7,6 +7,8 @@ import (
 	"sync"
 )
 
+type PluginLogger logger.Interface
+
 type vm struct {
 	types.DefaultVMContext
 }
@@ -18,16 +20,17 @@ func (v *vm) NewPluginContext(contextID uint32) types.PluginContext {
 type plugin struct {
 	sync.RWMutex
 	types.DefaultPluginContext
-	log   logger.Interface
+	log   PluginLogger
 	rings []*config.Ring
+}
+
+func newPlugin(log PluginLogger) *plugin {
+	return &plugin{log: log}
 }
 
 func (p *plugin) Rings() []*config.Ring {
 	p.RLock()
 	defer p.RUnlock()
-	if p.rings == nil {
-		return make([]*config.Ring, 0)
-	}
 	return p.rings
 }
 
@@ -35,11 +38,6 @@ func (p *plugin) AddRings(rings []*config.Ring) {
 	p.Lock()
 	defer p.Unlock()
 	p.rings = append(p.rings, rings...)
-}
-
-func newPlugin(loggerFactory *logger.Factory) *plugin {
-	log := loggerFactory.GetLogger("plugin")
-	return &plugin{log: log}
 }
 
 func (p *plugin) NewHttpContext(contextID uint32) types.HttpContext {

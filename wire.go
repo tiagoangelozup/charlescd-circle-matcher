@@ -14,11 +14,13 @@ import (
 )
 
 var providers = wire.NewSet(
-	ring.NewService,
 	http.NewRequest,
 	http.NewResponse,
 	logger.NewFactory,
 	newPlugin,
+	pluginLogger,
+	ring.NewService,
+	ringServiceLogger,
 	router.NewJWT,
 	wire.Bind(new(router.RingService), new(*ring.Service)),
 	wire.Bind(new(types.HttpContext), new(*router.JWT)),
@@ -33,4 +35,12 @@ func newPluginContext(contextID uint32) types.PluginContext {
 func newHttpContext(contextID uint32, rings []*config.Ring) types.HttpContext {
 	wire.Build(providers)
 	return nil
+}
+
+func ringServiceLogger(loggerFactory *logger.Factory) ring.ServiceLogger {
+	return loggerFactory.GetLogger("charlescd.service")
+}
+
+func pluginLogger(loggerFactory *logger.Factory) PluginLogger {
+	return loggerFactory.GetLogger("charlescd.plugin")
 }

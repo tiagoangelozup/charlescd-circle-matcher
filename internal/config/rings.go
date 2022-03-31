@@ -21,6 +21,7 @@ func RingsFromPlugin() ([]*Ring, error) {
 	}
 	return plugin.Rings, err
 }
+
 func unmarshalPlugin(data []byte) (*Plugin, error) {
 	r := new(Plugin)
 	if err := json.Unmarshal(data, r); err != nil {
@@ -44,7 +45,7 @@ type Match struct {
 }
 
 type Rule struct {
-	Key      string   `json:"key,omitempty"`
-	Operator string   `json:"operator,omitempty"`
-	Values   []string `json:"values,omitempty"`
+	Key      string        `json:"key,omitempty"`
+	Operator string        `json:"operator,omitempty"`
+	Values   []interface{} `json:"values,omitempty"`
 }
