@@ -59,6 +59,9 @@ kind: EnvoyFilter
 metadata:
   name: charlescd-wasm
 spec:
+  workloadSelector:
+    labels:
+      app: webpage
   configPatches:
     - applyTo: HTTP_FILTER
       match:
@@ -74,35 +77,17 @@ spec:
         value:
           name: charlescd-wasm
           typed_config:
-            '@type': type.googleapis.com/udpa.type.v1.TypedStruct
-            type_url: type.googleapis.com/envoy.extensions.filters.http.wasm.v3.Wasm
-            value:
-              config:
+            '@type': type.googleapis.com/envoy.extensions.filters.http.wasm.v3.Wasm
+            config:
+              configuration:
+                '@type': type.googleapis.com/google.protobuf.StringValue
+                value: '{"name":"plugin configuration"}'
+              vm_config:
+                vm_id: charlescd
+                runtime: envoy.wasm.runtime.v8
                 configuration:
                   '@type': type.googleapis.com/google.protobuf.StringValue
-                  value: { }
-                vm_config:
-                  vm_id: charlescd-wasm
-                  runtime: envoy.wasm.runtime.v8
-                  configuration:
-                    '@type': type.googleapis.com/google.protobuf.StringValue
-                    value: |
-                      {
-                        "rings": [
-                          {
-                            "id": "9d22edc0-db79-412e-9e4d-d420ec5826d0",
-                            "match": {
-                              "any": [
-                                {
-                                  "key": "request.auth.claims.age",
-                                  "operator": "GreaterThan",
-                                  "values": [ 30, 31 ]
-                                }
-                              ]
-                            }
-                          }
-                        ]
-                      }
-                  code:
-                    local:
-                      filename: /var/local/wasm/charlescd.wasm
+                  value: '{"name":"vm configuration"}'
+                code:
+                  local:
+                    filename: "/var/local/wasm/charlescd.wasm"

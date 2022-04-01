@@ -25,8 +25,8 @@ func Test_request_routing_1(t *testing.T) {
 	req, err := http.NewRequest("GET", url, nil)
 	require.NoError(t, err)
 
-	require.Eventually(t, getRed(req), 5*time.Second, time.Millisecond)
-	require.Never(t, getBlue(req), 5*time.Second, time.Millisecond)
+	require.Eventually(t, getRed(req), 5*time.Second, 500*time.Millisecond)
+	require.Never(t, getBlue(req), 5*time.Second, 500*time.Millisecond)
 }
 
 func Test_request_routing_2(t *testing.T) {
@@ -40,8 +40,8 @@ func Test_request_routing_2(t *testing.T) {
 
 	user := base64.RawStdEncoding.EncodeToString([]byte(`{"name":"Rafaela Rocha Cavalcanti","age":33,"city":"Fortaleza-CE"}`))
 	req.Header.Add("X-CharlesCD-Ring", user)
-	require.Eventually(t, getBlue(req), 5*time.Second, time.Millisecond)
-	require.Never(t, getRed(req), 5*time.Second, time.Millisecond)
+	require.Eventually(t, getBlue(req), 5*time.Second, 500*time.Millisecond)
+	require.Never(t, getRed(req), 5*time.Second, 500*time.Millisecond)
 }
 
 func Test_request_routing_3(t *testing.T) {
@@ -54,9 +54,9 @@ func Test_request_routing_3(t *testing.T) {
 	require.NoError(t, err)
 
 	user := base64.RawStdEncoding.EncodeToString([]byte(`{"name":"Antônio Rodrigues Santos","age":18,"city":"Lençóis Paulista-SP"}`))
-	req.Header.Add("X-CharlesCD-Ring", user)
-	require.Eventually(t, getRed(req), 5*time.Second, time.Millisecond)
-	require.Never(t, getBlue(req), 5*time.Second, time.Millisecond)
+	req.Header.Add("X-CharlesCD-User", user)
+	require.Eventually(t, getRed(req), 5*time.Second, 500*time.Millisecond)
+	require.Never(t, getBlue(req), 5*time.Second, 500*time.Millisecond)
 }
 
 func getRed(req *http.Request) func() bool {

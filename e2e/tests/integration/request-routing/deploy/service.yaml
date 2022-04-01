@@ -7,4 +7,5 @@ spec:
     app: webpage
   ports:
     - port: 80
+      name: http
   type: NodePort
