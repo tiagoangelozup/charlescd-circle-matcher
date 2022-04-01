@@ -3,18 +3,9 @@ package config
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/tetratelabs/proxy-wasm-go-sdk/proxywasm"
-	"github.com/tetratelabs/proxy-wasm-go-sdk/proxywasm/types"
 )
 
-func RingsFromPlugin() ([]*Ring, error) {
-	data, err := proxywasm.GetPluginConfiguration()
-	if err != nil && err != types.ErrorStatusNotFound {
-		return nil, fmt.Errorf("error getting plugin configurations: %w", err)
-	}
-	if data == nil {
-		return nil, nil
-	}
+func GetRings(data []byte) ([]*Ring, error) {
 	plugin, err := unmarshalPlugin(data)
 	if err != nil {
 		return nil, fmt.Errorf("error unmarshaling plugin configurations: %w", err)

@@ -3,6 +3,7 @@ package ring
 import (
 	"github.com/tiagoangelozup/charlescd-circle-matcher/internal/config"
 	"github.com/tiagoangelozup/charlescd-circle-matcher/internal/json"
+	"github.com/tiagoangelozup/charlescd-circle-matcher/internal/log"
 	"strings"
 )
 
@@ -11,6 +12,7 @@ type matcher interface {
 }
 
 func matcherOfRule(rule *config.Rule) matcher {
+	log.Debugf("getting a matcher for a rule operator %q", rule.Operator)
 	switch rule.Operator {
 	case "GreaterThan":
 		return newGreaterThanMatcher(rule.Key, rule.Values)
@@ -45,6 +47,7 @@ func (m *greaterThanMatcher) Match(j *json.Object) bool {
 		return false
 	}
 	key := strings.Replace(m.key, keyPrefix, "", 1)
+	log.Debugf("searching key %q", key)
 	jval, err := j.GetValue(key)
 	if err != nil {
 		return false

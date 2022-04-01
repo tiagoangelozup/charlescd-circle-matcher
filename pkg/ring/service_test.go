@@ -7,7 +7,7 @@ import (
 	"encoding/base64"
 	"github.com/tiagoangelozup/charlescd-circle-matcher/internal/config"
 	"github.com/tiagoangelozup/charlescd-circle-matcher/internal/http"
-	"github.com/tiagoangelozup/charlescd-circle-matcher/internal/logger"
+	"github.com/tiagoangelozup/charlescd-circle-matcher/internal/log"
 	"github.com/tiagoangelozup/charlescd-circle-matcher/pkg/ring"
 	"reflect"
 	"testing"
@@ -50,7 +50,7 @@ func TestService_FindRings(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := ring.NewService(new(logger.Local), tt.fields.rings)
+			s := ring.NewService(new(log.Local), tt.fields.rings)
 			got, err := s.FindRings(tt.args.req)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("FindRings() error = %v, wantErr %v", err, tt.wantErr)

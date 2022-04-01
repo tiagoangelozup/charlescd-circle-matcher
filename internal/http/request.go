@@ -8,7 +8,7 @@ import (
 )
 
 type Request interface {
-	GetHeader(key string) (string, error)
+	GetHeader(key string) (string, bool, error)
 }
 
 type envoyRequest struct {
@@ -20,17 +20,17 @@ func NewRequest(numHeaders int, endOfStream bool) *envoyRequest {
 	return &envoyRequest{numHeaders: numHeaders, endOfStream: endOfStream}
 }
 
-func (r *envoyRequest) GetHeader(key string) (string, error) {
+func (r *envoyRequest) GetHeader(key string) (string, bool, error) {
 	hs, err := proxywasm.GetHttpRequestHeaders()
 	if err != nil && err != types.ErrorStatusNotFound {
-		return "", fmt.Errorf("error getting http request header %q: %w", key, err)
+		return "", false, fmt.Errorf("error getting http request header %q: %w", key, err)
 	}
 	for _, h := range hs {
 		if k, v := h[0], h[1]; strings.EqualFold(k, key) {
-			return v, nil
+			return v, true, nil
 		}
 	}
-	return "", nil
+	return "", false, nil
 }
 
 func (r *envoyRequest) AddHeader(key, value string) error {

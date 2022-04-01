@@ -23,3 +23,7 @@ func (o *Object) GetValue(key string) (*Value, error) {
 	}
 	return &Value{value: value, dataType: dataType, offset: offset}, nil
 }
+
+func (o *Object) String() string {
+	return string(o.data)
+}
