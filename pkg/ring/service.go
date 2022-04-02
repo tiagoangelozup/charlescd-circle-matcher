@@ -10,10 +10,10 @@ import (
 const keyPrefix = "request.auth.claims."
 
 type Service struct {
-	rings []*config.Ring
+	rings config.Rings
 }
 
-func NewService(rings []*config.Ring) *Service {
+func NewService(rings config.Rings) *Service {
 	return &Service{rings: rings}
 }
 

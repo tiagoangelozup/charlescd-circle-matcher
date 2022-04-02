@@ -12,8 +12,7 @@ type RingService interface {
 
 type JWT struct {
 	types.DefaultHttpContext
-	contextID uint32
-	svc       RingService
+	svc RingService
 }
 
 func NewJWT(svc RingService) *JWT {

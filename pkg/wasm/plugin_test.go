@@ -1,7 +1,7 @@
 //go:build proxytest
 // +build proxytest
 
-package main
+package wasm
 
 import (
 	"testing"
@@ -16,7 +16,7 @@ func Test_httpHeaders_OnHttpRequestHeaders(t *testing.T) {
 	config := `{"rings":[{"id":"9d22edc0-db79-412e-9e4d-d420ec5826d0","match":{"any":[{"key":"request.auth.claims.age","operator":"GreaterThan","values":[30,31]}]}}]}`
 	opt := proxytest.NewEmulatorOption().
 		WithPluginConfiguration([]byte(config)).
-		WithVMContext(&vm{})
+		WithVMContext(&VM{})
 	host, reset := proxytest.NewHostEmulator(opt)
 	defer reset()
 

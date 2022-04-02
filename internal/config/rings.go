@@ -1,42 +1,59 @@
 package config
 
 import (
-	"encoding/json"
 	"fmt"
+	"github.com/buger/jsonparser"
 )
 
-func GetRings(data []byte) ([]*Ring, error) {
-	plugin, err := unmarshalPlugin(data)
-	if err != nil {
-		return nil, fmt.Errorf("error unmarshaling plugin configurations: %w", err)
+type (
+	converter func([]byte, jsonparser.ValueType, int, error)
+	Rings     []*Ring
+	Ring      struct {
+		ID    string
+		Match Match
 	}
-	return plugin.Rings, err
-}
-
-func unmarshalPlugin(data []byte) (*Plugin, error) {
-	r := new(Plugin)
-	if err := json.Unmarshal(data, r); err != nil {
-		return nil, fmt.Errorf("error unmarshaling plugin configurations: %w", err)
+	Match struct {
+		All []*Rule
+		Any []*Rule
 	}
-	return r, nil
+	Rule struct {
+		Key      string
+		Operator string
+		Values   []interface{}
+	}
+)
+
+type builder struct {
+	rings Rings
 }
 
-type Plugin struct {
-	Rings []*Ring `json:"rings,omitempty"`
+func NewRings(raw PluginRawData) Rings {
+	b := &builder{rings: make(Rings, 0)}
+	jsonparser.ArrayEach(raw, funcName(b), "rings")
+	return b.rings
 }
 
-type Ring struct {
-	ID    string `json:"id,omitempty"`
-	Match *Match `json:"match,omitempty"`
+func funcName(b *builder) converter {
+	return func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
+		ring := new(Ring)
+		ring.ID, _ = jsonparser.GetString(value, "id")
+		jsonparser.ArrayEach(value, funcName2(ring), "match", "any")
+		b.rings = append(b.rings, ring)
+	}
 }
 
-type Match struct {
-	All []*Rule `json:"all,omitempty"`
-	Any []*Rule `json:"any,omitempty"`
+func funcName2(r *Ring) converter {
+	return func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
+		rule := new(Rule)
+		rule.Key, _ = jsonparser.GetString(value, "key")
+		rule.Operator, _ = jsonparser.GetString(value, "operator")
+		jsonparser.ArrayEach(value, funcName3(rule), "values")
+		r.Match.Any = append(r.Match.Any, rule)
+	}
 }
 
-type Rule struct {
-	Key      string        `json:"key,omitempty"`
-	Operator string        `json:"operator,omitempty"`
-	Values   []interface{} `json:"values,omitempty"`
+func funcName3(rule *Rule) converter {
+	return func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
+		fmt.Println(value)
+	}
 }
