@@ -39,7 +39,7 @@ func Test_request_routing_2(t *testing.T) {
 	require.NoError(t, err)
 
 	user := base64.RawStdEncoding.EncodeToString([]byte(`{"name":"Rafaela Rocha Cavalcanti","age":33,"city":"Fortaleza-CE"}`))
-	req.Header.Add("X-CharlesCD-Ring", user)
+	req.Header.Add("X-CharlesCD-User", user)
 	require.Eventually(t, getBlue(req), 5*time.Second, 500*time.Millisecond)
 	require.Never(t, getRed(req), 5*time.Second, 500*time.Millisecond)
 }

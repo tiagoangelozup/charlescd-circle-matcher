@@ -18,18 +18,38 @@ spec:
 apiVersion: networking.istio.io/v1beta1
 kind: VirtualService
 metadata:
-  name: webpage
+  name: webpage-north-south
 spec:
   gateways:
     - webpage
   hosts:
     - webpage.lvh.me
+  http:
+    - match:
+        - headers:
+            X-CharlesCD-Ring:
+              exact: 9d22edc0-db79-412e-9e4d-d420ec5826d0
+      route:
+        - destination:
+            host: webpage
+            subset: blue
+    - route:
+        - destination:
+            host: webpage
+            subset: red
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: webpage-east-west
+spec:
+  hosts:
     - webpage
   http:
     - match:
         - headers:
             X-CharlesCD-Ring:
-              exact: 18e2451b-c1c3-4d4f-a37b-232db6e95cf9
+              exact: 9d22edc0-db79-412e-9e4d-d420ec5826d0
       route:
         - destination:
             host: webpage
@@ -58,14 +78,12 @@ apiVersion: networking.istio.io/v1alpha3
 kind: EnvoyFilter
 metadata:
   name: charlescd-wasm
+  namespace: istio
 spec:
-  workloadSelector:
-    labels:
-      app: webpage
   configPatches:
     - applyTo: HTTP_FILTER
       match:
-        context: SIDECAR_INBOUND
+        context: SIDECAR_OUTBOUND
         listener:
           filterChain:
             filter:
@@ -81,13 +99,42 @@ spec:
             config:
               configuration:
                 '@type': type.googleapis.com/google.protobuf.StringValue
-                value: '{"name":"plugin configuration"}'
+                value: '{"rings":[{"id":"9d22edc0-db79-412e-9e4d-d420ec5826d0","match":{"any":[{"key":"request.auth.claims.age","operator":"GreaterThan","values":[30,31]}]}},{"id":"cbb548ce-e412-4b16-9191-e06544beb69d","match":{"all":[{"key":"request.auth.claims.city","operator":"Equals","values":["São Carlos/SP",33]}]}}]}'
               vm_config:
-                vm_id: charlescd
-                runtime: envoy.wasm.runtime.v8
+                code:
+                  local:
+                    filename: /var/local/wasm/charlescd.wasm
                 configuration:
                   '@type': type.googleapis.com/google.protobuf.StringValue
                   value: '{"name":"vm configuration"}'
+                runtime: envoy.wasm.runtime.v8
+                vm_id: charlescd
+
+    - applyTo: HTTP_FILTER
+      match:
+        context: GATEWAY
+        listener:
+          filterChain:
+            filter:
+              name: envoy.filters.network.http_connection_manager
+              subFilter:
+                name: envoy.filters.http.router
+      patch:
+        operation: INSERT_BEFORE
+        value:
+          name: charlescd-wasm
+          typed_config:
+            '@type': type.googleapis.com/envoy.extensions.filters.http.wasm.v3.Wasm
+            config:
+              configuration:
+                '@type': type.googleapis.com/google.protobuf.StringValue
+                value: '{"rings":[{"id":"9d22edc0-db79-412e-9e4d-d420ec5826d0","match":{"any":[{"key":"request.auth.claims.age","operator":"GreaterThan","values":[30,31]}]}},{"id":"cbb548ce-e412-4b16-9191-e06544beb69d","match":{"all":[{"key":"request.auth.claims.city","operator":"Equals","values":["São Carlos/SP",33]}]}}]}'
+              vm_config:
                 code:
                   local:
-                    filename: "/var/local/wasm/charlescd.wasm"
+                    filename: /var/local/wasm/charlescd.wasm
+                configuration:
+                  '@type': type.googleapis.com/google.protobuf.StringValue
+                  value: '{"name":"vm configuration"}'
+                runtime: envoy.wasm.runtime.v8
+                vm_id: charlescd
