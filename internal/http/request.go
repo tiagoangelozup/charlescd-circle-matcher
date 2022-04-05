@@ -26,7 +26,7 @@ func (r *envoyRequest) GetHeader(key string) (string, bool, error) {
 		return "", false, fmt.Errorf("error getting http request header %q: %w", key, err)
 	}
 	for _, h := range hs {
-		if k, v := h[0], h[1]; strings.EqualFold(k, key) {
+		if k, v := h[0], h[1]; strings.EqualFold(k, key) && v != "" {
 			return v, true, nil
 		}
 	}

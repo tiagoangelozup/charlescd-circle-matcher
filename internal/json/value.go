@@ -17,3 +17,7 @@ func (v *Value) AsFloat() (float64, error) {
 	}
 	return jsonparser.ParseFloat(v.value)
 }
+
+func (v *Value) String() string {
+	return string(v.value)
+}

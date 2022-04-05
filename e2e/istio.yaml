@@ -8,6 +8,14 @@ spec:
         k8s:
           nodeSelector:
             ingress-ready: "true"
+          volumes:
+            - configMap:
+                defaultMode: 420
+                name: charlescd-wasm
+              name: wasm
+          volumeMounts:
+            - mountPath: /var/local/wasm
+              name: wasm
           service:
             ports:
               - name: status-port

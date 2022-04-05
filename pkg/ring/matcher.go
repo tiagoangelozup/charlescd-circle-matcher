@@ -8,21 +8,26 @@ import (
 )
 
 type matcher interface {
-	Match(j *json.Object) bool
+	MatchAny(j *json.Object) bool
+	MatchAll(j *json.Object) bool
 }
 
 func matcherOfRule(rule *config.Rule) matcher {
 	log.Debugf("getting a matcher for a rule operator %q", rule.Operator)
 	switch rule.Operator {
 	case "GreaterThan":
-		return newGreaterThanMatcher(rule.Key, rule.Values)
+		return &greaterThanMatcher{key: rule.Key, values: rule.NumberValues()}
 	}
 	return new(noMatcher)
 }
 
 type noMatcher struct{}
 
-func (g *noMatcher) Match(j *json.Object) bool {
+func (g *noMatcher) MatchAny(j *json.Object) bool {
+	return false
+}
+
+func (g *noMatcher) MatchAll(j *json.Object) bool {
 	return false
 }
 
@@ -31,18 +36,7 @@ type greaterThanMatcher struct {
 	values []float64
 }
 
-func newGreaterThanMatcher(key string, values []interface{}) *greaterThanMatcher {
-	v := make([]float64, 0)
-	for _, value := range values {
-		switch t := value.(type) {
-		case float64:
-			v = append(v, t)
-		}
-	}
-	return &greaterThanMatcher{key: key, values: v}
-}
-
-func (m *greaterThanMatcher) Match(j *json.Object) bool {
+func (m *greaterThanMatcher) MatchAny(j *json.Object) bool {
 	if !strings.HasPrefix(m.key, keyPrefix) {
 		return false
 	}
@@ -50,18 +44,26 @@ func (m *greaterThanMatcher) Match(j *json.Object) bool {
 	log.Debugf("searching key %q", key)
 	jval, err := j.GetValue(key)
 	if err != nil {
+		log.Warnf("error getting value for key %q: %v", key, err)
 		return false
 	}
+	log.Debugf("found %q=%q", key, jval)
 	num, err := jval.AsFloat()
 	if err != nil {
-		// TODO: log warning
+		log.Warnf("error unmarshalling rule value %q: %v", jval, err)
 		return false
 	}
-	result := len(m.values) > 0
 	for _, mval := range m.values {
-		if num <= mval {
-			return false
+		if num > mval {
+			log.Debugf(`matched operation {"reason":"%g > %g"}`, num, mval)
+			return true
+		} else {
+			log.Debugf(`unmatched operation {"reason":"%g <= %g"}`, num, mval)
 		}
 	}
-	return result
+	return false
+}
+
+func (m *greaterThanMatcher) MatchAll(j *json.Object) bool {
+	return false
 }

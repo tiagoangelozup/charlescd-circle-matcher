@@ -19,8 +19,12 @@ func NewService(rings config.Rings) *Service {
 
 func (s *Service) FindRings(req http.Request) ([]string, error) {
 	encoded, ok, err := req.GetHeader("X-CharlesCD-User")
-	if err != nil || !ok {
+	if err != nil {
 		return nil, err
+	}
+	if !ok {
+		log.Debugf("user not found")
+		return nil, nil
 	}
 	j, err := json.FromBase64(encoded)
 	if err != nil {
@@ -30,7 +34,7 @@ func (s *Service) FindRings(req http.Request) ([]string, error) {
 	results := make([]string, 0)
 	for _, ring := range s.rings {
 		for _, rule := range ring.Match.Any {
-			if matcherOfRule(rule).Match(j) {
+			if matcherOfRule(rule).MatchAny(j) {
 				results = append(results, ring.ID)
 			}
 		}

@@ -16,9 +16,12 @@ import (
 
 // Injectors from wire.go:
 
-func newHttpContext(httpID context.HttpID, pluginID context.PluginID, pluginRawData config.PluginRawData, vmRawData config.VMRawData) types.HttpContext {
-	rings := config.NewRings(pluginRawData)
+func newHttpContext(httpID context.HttpID, pluginID context.PluginID, pluginRawData config.PluginRawData, vmRawData config.VMRawData) (types.HttpContext, error) {
+	rings, err := config.NewRings(pluginRawData)
+	if err != nil {
+		return nil, err
+	}
 	service := ring.NewService(rings)
 	jwt := router.NewJWT(service)
-	return jwt
+	return jwt, nil
 }

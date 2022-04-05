@@ -37,12 +37,17 @@ func (p *Plugin) OnPluginStart(pluginConfigurationSize int) types.OnPluginStartS
 }
 
 func (p *Plugin) NewHttpContext(contextID uint32) types.HttpContext {
-	return newHttpContext(
+	httpContext, err := newHttpContext(
 		context.HttpID(contextID),
 		p.ContextID(),
 		p.PluginConfig(),
 		p.VMConfig(),
 	)
+	if err != nil {
+		log.Critical(err, "failed to initialize a new http context")
+		return nil
+	}
+	return httpContext
 }
 
 func (p *Plugin) ContextID() context.PluginID {

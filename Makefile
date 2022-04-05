@@ -6,7 +6,7 @@ help: ## This help.
 
 .PHONY: build
 build: ## Build a wasm image from a TinyGo filter.
-	tinygo build -o charlescd.wasm -scheduler=none -target=wasi ./
+	tinygo build -o charlescd.wasm -scheduler=none -target=wasi ./cmd/charlescd
 
 .PHONY: test
 test: build ## Test the wasm image from the end user’s experience.

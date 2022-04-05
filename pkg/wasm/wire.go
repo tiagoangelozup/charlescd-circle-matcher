@@ -10,7 +10,7 @@ import (
 	"github.com/tiagoangelozup/charlescd-circle-matcher/internal/context"
 )
 
-func newHttpContext(context.HttpID, context.PluginID, config.PluginRawData, config.VMRawData) types.HttpContext {
+func newHttpContext(context.HttpID, context.PluginID, config.PluginRawData, config.VMRawData) (types.HttpContext, error) {
 	wire.Build(ProviderSet)
-	return nil
+	return nil, nil
 }
