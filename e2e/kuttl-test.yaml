@@ -11,7 +11,9 @@ commands:
   - command: kubectl create ns istio-system
   - command: kubectl -n=istio-system create configmap charlescd-wasm --from-file=charlescd.wasm=tests/integration/request-routing/deploy/charlescd.wasm
   - command: istioctl install -f=istio.yaml -y
+  - command: kubectl -n=istio-system patch deployment istio-ingressgateway --patch '{"spec":{"template":{"spec":{"containers":[{"name":"istio-proxy","volumeMounts":[{"mountPath":"/var/local/wasm","name":"wasm"}]}],"volumes":[{"configMap":{"defaultMode":420,"name":"charlescd-wasm"},"name":"wasm"}]}}}}'
   - command: kubectl -n=istio-system wait --timeout=60s --for=condition=Available deployment.apps/istiod
+  - command: kubectl -n=istio-system wait --timeout=60s --for=condition=Available deployment.apps/istio-ingressgateway
 testDirs:
   - ./tests/integration/
 kindContainers:
