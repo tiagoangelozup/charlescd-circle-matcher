@@ -24,7 +24,7 @@ jobs:
         run: echo "::set-output name=COMMIT_HASH::$(echo ${GITHUB_SHA} | cut -c1-8)"
 
       - name: Build
-        run: tinygo build -o charlescd.wasm -scheduler=none -target=wasi ./
+        run: tinygo build -o charlescd.wasm -scheduler=none -target=wasi ./cmd/charlescd
 
       - name: Upload built artifact
         uses: actions/upload-artifact@v3.0.0
