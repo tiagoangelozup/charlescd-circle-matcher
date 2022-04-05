@@ -3,7 +3,7 @@ kind: TestSuite
 kindConfig: ./kind.yaml
 kindContext: request-routing
 kindNodeCache: true
-skipClusterDelete: false
+skipClusterDelete: true
 skipDelete: true
 startKIND: true
 reportFormat: JSON
@@ -12,6 +12,72 @@ commands:
   - command: kubectl -n=istio-system create configmap charlescd-wasm --from-file=charlescd.wasm=tests/integration/request-routing/deploy/charlescd.wasm
   - command: istioctl install -f=istio.yaml -y
   - command: kubectl -n=istio-system patch deployment istio-ingressgateway --patch '{"spec":{"template":{"spec":{"containers":[{"name":"istio-proxy","volumeMounts":[{"mountPath":"/var/local/wasm","name":"wasm"}]}],"volumes":[{"configMap":{"defaultMode":420,"name":"charlescd-wasm"},"name":"wasm"}]}}}}'
+  - script: |
+      set -e
+      cat <<EOF | kubectl -n=istio-system create -f -
+        apiVersion: networking.istio.io/v1alpha3
+        kind: EnvoyFilter
+        metadata:
+          name: charlescd-wasm
+        spec:
+          configPatches:
+            - applyTo: HTTP_FILTER
+              match:
+                context: SIDECAR_OUTBOUND
+                listener:
+                  filterChain:
+                    filter:
+                      name: envoy.filters.network.http_connection_manager
+                      subFilter:
+                        name: envoy.filters.http.router
+              patch:
+                operation: INSERT_BEFORE
+                value:
+                  name: charlescd-wasm
+                  typed_config:
+                    '@type': type.googleapis.com/envoy.extensions.filters.http.wasm.v3.Wasm
+                    config:
+                      configuration:
+                        '@type': type.googleapis.com/google.protobuf.StringValue
+                        value: '{"rings":[{"id":"9d22edc0-db79-412e-9e4d-d420ec5826d0","match":{"any":[{"key":"request.auth.claims.age","operator":"GreaterThan","values":[30,31]}]}},{"id":"cbb548ce-e412-4b16-9191-e06544beb69d","match":{"all":[{"key":"request.auth.claims.city","operator":"Equals","values":["São Carlos/SP",33]}]}}]}'
+                      vm_config:
+                        code:
+                          local:
+                            filename: /var/local/wasm/charlescd.wasm
+                        configuration:
+                          '@type': type.googleapis.com/google.protobuf.StringValue
+                          value: '{"name":"vm configuration"}'
+                        runtime: envoy.wasm.runtime.v8
+                        vm_id: charlescd
+            - applyTo: HTTP_FILTER
+              match:
+                context: GATEWAY
+                listener:
+                  filterChain:
+                    filter:
+                      name: envoy.filters.network.http_connection_manager
+                      subFilter:
+                        name: envoy.filters.http.router
+              patch:
+                operation: INSERT_BEFORE
+                value:
+                  name: charlescd-wasm
+                  typed_config:
+                    '@type': type.googleapis.com/envoy.extensions.filters.http.wasm.v3.Wasm
+                    config:
+                      configuration:
+                        '@type': type.googleapis.com/google.protobuf.StringValue
+                        value: '{"rings":[{"id":"9d22edc0-db79-412e-9e4d-d420ec5826d0","match":{"any":[{"key":"request.auth.claims.age","operator":"GreaterThan","values":[30,31]}]}},{"id":"cbb548ce-e412-4b16-9191-e06544beb69d","match":{"all":[{"key":"request.auth.claims.city","operator":"Equals","values":["São Carlos/SP",33]}]}}]}'
+                      vm_config:
+                        code:
+                          local:
+                            filename: /var/local/wasm/charlescd.wasm
+                        configuration:
+                          '@type': type.googleapis.com/google.protobuf.StringValue
+                          value: '{"name":"vm configuration"}'
+                        runtime: envoy.wasm.runtime.v8
+                        vm_id: charlescd
+      EOF
   - command: kubectl -n=istio-system wait --timeout=60s --for=condition=Available deployment.apps/istiod
   - command: kubectl -n=istio-system wait --timeout=60s --for=condition=Available deployment.apps/istio-ingressgateway
 testDirs:
